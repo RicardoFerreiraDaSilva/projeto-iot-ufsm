@@ -1,0 +1,87 @@
+version: '3.7'
+
+# Variáveis de ambiente
+# Use senhas e nomes de usuário fortes para um projeto real.
+x-environment-vars: &env-vars
+  INFLUXDB_DB: 'dados_sensor' # Nome do banco de dados (bucket)
+  INFLUXDB_ORG: 'ufsm_iot'     # Nome da Organização
+  INFLUXDB_TOKEN: 'rT2qX9zY4aE0uO6vF8jL3pI5sH7kG1fD9bC2mM4nX6eW8rU0tY3vQ5pZ7xJ1wB9yD0cT2gP4kM' # Token de API
+  INFLUXDB_USER: 'admin_iot'  # Usuário inicial
+
+services:
+  # 1. Broker MQTT (Mosquitto)
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883" # Porta padrão para MQTT
+      - "9001:9001" # Porta para WebSockets
+    volumes:
+      - mosquitto_data:/mosquitto/data
+    networks:
+      - iot-network
+
+  # 2. Banco de Dados (InfluxDB)
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb-tsdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086" # Porta padrão da API do InfluxDB
+    volumes:
+      - ./data-influxdb:/var/lib/influxdb2 # Persistência dos dados
+    environment:
+      # Configuração inicial do InfluxDB 2.x
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: 'admin_iot'
+      DOCKER_INFLUXDB_INIT_PASSWORD: 'Q2t.5hE7bM%pX0jN#'
+      DOCKER_INFLUXDB_INIT_ORG: 'ufsm_iot'
+      DOCKER_INFLUXDB_INIT_BUCKET: 'dados_sensor'
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: 'rT4pQ9zB6uX3cE1fJ7mD2kH5vL8nG0yY4wW7sR2oT0iA9eU8gP6tK3hJ1uZ5vD0xY9bW4rQ7cE'
+      DOCKER_INFLUXDB_INIT_RETENTION: 0 # 0 = sem limite de retenção
+    networks:
+      - iot-network
+
+  # 3. Lógica de Processamento (Node-RED)
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered-logic
+    restart: unless-stopped
+    ports:
+      - "1880:1880" # Porta de acesso ao Node-RED (via browser)
+    volumes:
+      - ./data-nodered:/data # Persistência dos fluxos
+    environment:
+      # Variáveis de ambiente para Node-RED acessar o InfluxDB
+      TZ: America/Sao_Paulo
+    networks:
+      - iot-network
+    depends_on:
+      - mosquitto # Inicia Node-RED após o Mosquitto
+      - influxdb
+
+  # 4. Visualização (Grafana)
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana-dashboards
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Porta de acesso ao Grafana (via browser)
+    volumes:
+      - ./data-grafana:/var/lib/grafana # Persistência dos dashboards
+    environment:
+      # Credenciais padrão para login inicial: admin/admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: 'Q2t&5hE7bM%pX0jN'
+      TZ: America/Sao_Paulo
+    networks:
+      - iot-network
+    depends_on:
+      - influxdb # Inicia Grafana após o InfluxDB
+volumes:
+  mosquitto_data:
+# Definição de rede interna do Docker para os containers se comunicarem
+networks:
+  iot-network:
+    driver: bridge
