@@ -1,5 +1,3 @@
-version: '3.7'
-
 # Variáveis de ambiente
 # Use senhas e nomes de usuário fortes para um projeto real.
 x-environment-vars: &env-vars
