@@ -1,0 +1,5 @@
+/data-influxdb/
+/data-grafana/
+/data-nodered/
+/mosquitto_data/
+.vscode/

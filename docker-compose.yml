@@ -3,7 +3,8 @@
 x-environment-vars: &env-vars
   INFLUXDB_DB: 'dados_sensor' # Nome do banco de dados (bucket)
   INFLUXDB_ORG: 'ufsm_iot'     # Nome da Organização
-  INFLUXDB_TOKEN: 'rT2qX9zY4aE0uO6vF8jL3pI5sH7kG1fD9bC2mM4nX6eW8rU0tY3vQ5pZ7xJ1wB9yD0cT2gP4kM' # Token de API
+  # USE O MESMO TOKEN DE ADMINISTRAÇÃO USADO NA INICIALIZAÇÃO DO INFLUXDB
+  INFLUXDB_TOKEN: 'rT4pQ9zB6uX3cE1fJ7mD2kH5vL8nG0yY4wW7sR2oT0iA9eU8gP6tK3hJ1uZ5vD0xY9bW4rQ7cE' 
   INFLUXDB_USER: 'admin_iot'  # Usuário inicial
 
 services:
@@ -16,7 +17,12 @@ services:
       - "1883:1883" # Porta padrão para MQTT
       - "9001:9001" # Porta para WebSockets
     volumes:
+# CORREÇÃO: Mapeia o arquivo de configuração para a raiz temporária
+      - ./mosquitto.conf:/tmp/mosquitto.conf 
       - mosquitto_data:/mosquitto/data
+    
+    # FORÇA O MOSQUITTO A USAR O ARQUIVO NO NOVO LOCAL (/tmp)
+    command: /bin/sh -c "mosquitto -c /tmp/mosquitto.conf -v"
     networks:
       - iot-network
 
@@ -51,12 +57,14 @@ services:
     volumes:
       - ./data-nodered:/data # Persistência dos fluxos
     environment:
-      # Variáveis de ambiente para Node-RED acessar o InfluxDB
+      # APLICA AS VARIAVEIS DE CONEXÃO DO INFLUXDB AQUI
+      <<: *env-vars 
+      INFLUXDB_HOST: 'http://influxdb:8086' # Conexão interna
       TZ: America/Sao_Paulo
     networks:
       - iot-network
     depends_on:
-      - mosquitto # Inicia Node-RED após o Mosquitto
+      - mosquitto
       - influxdb
 
   # 4. Visualização (Grafana)
@@ -76,10 +84,12 @@ services:
     networks:
       - iot-network
     depends_on:
-      - influxdb # Inicia Grafana após o InfluxDB
+      - influxdb
+
 volumes:
   mosquitto_data:
+
 # Definição de rede interna do Docker para os containers se comunicarem
 networks:
   iot-network:
-    driver: bridge
+    driver: bridge 
