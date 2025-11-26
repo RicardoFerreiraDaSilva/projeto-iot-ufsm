@@ -1,9 +1,9 @@
 # Variáveis de ambiente
-# Use senhas e nomes de usuário fortes para um projeto real.
+
 x-environment-vars: &env-vars
   INFLUXDB_DB: 'dados_sensor' # Nome do banco de dados (bucket)
   INFLUXDB_ORG: 'ufsm_iot'     # Nome da Organização
-  # USE O MESMO TOKEN DE ADMINISTRAÇÃO USADO NA INICIALIZAÇÃO DO INFLUXDB
+  # USAMOS O MESMO TOKEN DE ADMINISTRAÇÃO USADO NA INICIALIZAÇÃO DO INFLUXDB
   INFLUXDB_TOKEN: 'rT4pQ9zB6uX3cE1fJ7mD2kH5vL8nG0yY4wW7sR2oT0iA9eU8gP6tK3hJ1uZ5vD0xY9bW4rQ7cE' 
   INFLUXDB_USER: 'admin_iot'  # Usuário inicial
 
