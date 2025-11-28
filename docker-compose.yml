@@ -86,10 +86,31 @@ services:
     depends_on:
       - influxdb
 
+# 5. Agente de Coleta (Telegraf)
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf-agent
+    restart: unless-stopped
+    volumes:
+      # Mapeia o arquivo de configuração do seu host
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro 
+    environment:
+      # Passa o token do InfluxDB (o Telegraf precisa disso para escrever)
+      INFLUX_TOKEN: 'rT4pQ9zB6uX3cE1fJ7mD2kH5vL8nG0yY4wW7sR2oT0iA9eU8gP6tK3hJ1uZ5vD0xY9bW4rQ7cE'
+      # Variáveis para Telegraf usar na saída InfluxDB (Opcional, mas útil)
+      INFLUXDB_URL: 'http://influxdb:8086'
+      INFLUXDB_ORG: 'ufsm_iot'
+      INFLUXDB_BUCKET: 'dados_sensor'
+    networks:
+      - iot-network
+    depends_on:
+      - mosquitto  # Recebe dados do Mosquitto
+      - influxdb   # Escreve dados no InfluxDB
+
 volumes:
   mosquitto_data:
 
 # Definição de rede interna do Docker para os containers se comunicarem
 networks:
   iot-network:
-    driver: bridge 
+    driver: bridge
